@@ -23,11 +23,11 @@ type WadEntry struct {
 type WadEntryType byte
 
 const (
-	Uncompressed           WadEntryType = 0
-	GZip                   WadEntryType = 1
-	FileRedirection        WadEntryType = 2
-	ZStandard              WadEntryType = 3
-	ZStandardWithsubchunks WadEntryType = 3
+	Uncompressed    WadEntryType = 0
+	GZip            WadEntryType = 1
+	FileRedirection WadEntryType = 2
+	ZStandard       WadEntryType = 3
+	// ZStandardWithsubchunks WadEntryType = 4
 )
 
 type WadEntryChecksumType byte

@@ -3,16 +3,18 @@ package wadFile
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
+	"github.com/beego/beego/v2/core/logs"
 	"io/fs"
 	"os"
-	"strconv"
 )
 
 type Wad struct {
 	HEADER_SIZE_V3 int // default 272
 	Signature      []byte
 	Entries        map[uint64]*WadEntry
-	data           []byte
+	// data           []byte
+	File *os.File
 	// _leaveOpen     bool // not used
 	_isDisposed  bool
 	DataChecksum uint64
@@ -29,6 +31,7 @@ func Read(wadPath string) (*Wad, error) {
 	wad := &Wad{
 		HEADER_SIZE_V3: 272, // fixed 272
 		Entries:        map[uint64]*WadEntry{},
+		File:           file,
 	}
 
 	magic := make([]byte, 2) // RW
@@ -122,9 +125,15 @@ func Read(wadPath string) (*Wad, error) {
 		entry := NewWadEntry(wad, file, major, minor)
 		if _, exist := wad.Entries[entry.XXHash]; exist {
 			return nil, errors.New("Tried to read a Wad Entry with the same path hash as an already existing entry: " +
-				strconv.FormatUint(entry.XXHash, 10))
+				fmt.Sprintf("%x", entry.XXHash))
 		}
 		wad.Entries[entry.XXHash] = entry
+
+		bytes, err := NewWadEntryDataHandle(entry).GetDecompressedBytes()
+		if err != nil {
+			return nil, err
+		}
+		logs.Info(`bytes len is %d`, len(bytes))
 	}
 
 	return wad, nil
