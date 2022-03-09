@@ -1,2 +1,5 @@
 # ltk
-basic on https://github.com/LoL-Fantome/LeagueToolkit
+
+LeagueToolkit implement on Golang.
+
+Basic on https://github.com/LoL-Fantome/LeagueToolkit
