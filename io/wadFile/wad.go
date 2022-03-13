@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/beego/beego/v2/core/logs"
 	"io/fs"
 	"os"
 )
@@ -18,6 +17,7 @@ type Wad struct {
 	// _leaveOpen     bool // not used
 	_isDisposed  bool
 	DataChecksum uint64
+	Checksum     []byte
 	FileCount    uint32
 }
 
@@ -26,7 +26,6 @@ func Read(wadPath string) (*Wad, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
 
 	wad := &Wad{
 		HEADER_SIZE_V3: 272, // fixed 272
@@ -61,6 +60,7 @@ func Read(wadPath string) (*Wad, error) {
 	// v2 version maybe not work
 	var signature []byte
 	var dataChecksum []byte
+
 	if major == 2 {
 		ecdsaLength_ := make([]byte, 1)
 		if _, err := file.Read(ecdsaLength_); err != nil {
@@ -84,7 +84,9 @@ func Read(wadPath string) (*Wad, error) {
 			return nil, err
 		}
 		dataChecksum = dataChecksum_
-	} else if major == 3 {
+	}
+
+	if major == 3 {
 		signature_ := make([]byte, 256)
 		if _, err := file.Read(signature_); err != nil {
 			return nil, err
@@ -100,6 +102,7 @@ func Read(wadPath string) (*Wad, error) {
 
 	wad.Signature = signature
 	wad.DataChecksum = binary.LittleEndian.Uint64(dataChecksum)
+	wad.Checksum = dataChecksum
 
 	if major == 1 || major == 2 {
 		tocStartOffset := make([]byte, 2)
@@ -124,16 +127,10 @@ func Read(wadPath string) (*Wad, error) {
 	for i := uint32(0); i < fileCount; i++ {
 		entry := NewWadEntry(wad, file, major, minor)
 		if _, exist := wad.Entries[entry.XXHash]; exist {
-			return nil, errors.New("Tried to read a Wad Entry with the same path hash as an already existing entry: " +
+			return nil, errors.New("Tried to read a Wad Entry with the same path gameHash as an already existing entry: " +
 				fmt.Sprintf("%x", entry.XXHash))
 		}
 		wad.Entries[entry.XXHash] = entry
-
-		bytes, err := NewWadEntryDataHandle(entry).GetDecompressedBytes()
-		if err != nil {
-			return nil, err
-		}
-		logs.Info(`bytes len is %d`, len(bytes))
 	}
 
 	return wad, nil
