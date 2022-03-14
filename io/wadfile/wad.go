@@ -2,6 +2,7 @@ package wadfile
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -10,15 +11,19 @@ import (
 
 type Wad struct {
 	HEADER_SIZE_V3 int // default 272
-	Signature      []byte
+	signature      []byte
 	Entries        map[uint64]*WadEntry
-	// data           []byte
-	File *os.File
-	// _leaveOpen     bool // not used
-	_isDisposed  bool
-	DataChecksum uint64
-	Checksum     []byte
-	FileCount    uint32
+	File           *os.File
+	_leaveOpen     bool // not used
+	_isDisposed    bool
+	dataChecksum   uint64
+	FileCount      uint32
+}
+
+func (w *Wad) Signature() string {
+	marshal, _ := json.Marshal(w.signature)
+	s := string(marshal)
+	return s
 }
 
 func Read(wadPath string) (*Wad, error) {
@@ -59,6 +64,7 @@ func Read(wadPath string) (*Wad, error) {
 
 	// v2 version maybe not work
 	var signature []byte
+	// probably not "dataChecksum"
 	var dataChecksum []byte
 
 	if major == 2 {
@@ -66,8 +72,8 @@ func Read(wadPath string) (*Wad, error) {
 		if _, err := file.Read(ecdsaLength_); err != nil {
 			return nil, err
 		}
-
 		ecdsaLength := ecdsaLength_[0]
+
 		signature_ := make([]byte, ecdsaLength)
 		if _, err := file.Read(signature_); err != nil {
 			return nil, err
@@ -100,9 +106,9 @@ func Read(wadPath string) (*Wad, error) {
 		signature = signature_
 	}
 
-	wad.Signature = signature
-	wad.DataChecksum = binary.LittleEndian.Uint64(dataChecksum)
-	wad.Checksum = dataChecksum
+	wad.signature = signature
+	// not used
+	wad.dataChecksum = binary.LittleEndian.Uint64(dataChecksum)
 
 	if major == 1 || major == 2 {
 		tocStartOffset := make([]byte, 2)

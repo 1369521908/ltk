@@ -4,7 +4,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"strconv"
+	"ltk/helper"
+	"os"
 	"testing"
 	"time"
 )
@@ -82,7 +83,14 @@ func Test_ByteArrayToHex(t *testing.T) {
 }
 
 func TestRead(t *testing.T) {
-	filepath := "../../files/wadfile/Aatrox.wadfile.client"
+	filepath := "../../files/wad/Aatrox.wad.client"
+	signpath := "../../files/sign.txt"
+
+	sign, err := os.ReadFile(signpath)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(string(sign))
 
 	start := time.Now().Unix()
 	wad, err := Read(filepath)
@@ -91,20 +99,18 @@ func TestRead(t *testing.T) {
 	}
 	fmt.Println("Read time:", time.Now().Unix()-start)
 
-	check, _ := json.Marshal(wad.Checksum)
-	fmt.Println(string(check))
+	fmt.Println(wad.Signature())
 
 	defer wad.File.Close()
-	s, _ := json.Marshal(wad.Signature)
+	s, _ := json.Marshal(wad.signature)
 	fmt.Println(string(s))
 
 	for xxhash, entry := range wad.Entries {
-		xxhashStr := strconv.FormatUint(xxhash, 16)
 		bytes, err := NewWadEntryDataHandle(entry).GetDecompressedBytes()
 		if err != nil {
 			t.Error(err)
 		}
-		fmt.Println(xxhashStr, len(bytes))
+		fmt.Println(helper.HashToHex16(xxhash), len(bytes))
 	}
 	fmt.Println(wad.FileCount)
 }

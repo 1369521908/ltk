@@ -1,13 +1,19 @@
 package wadextract
 
 import (
-	"errors"
 	"fmt"
+	"io"
+	"io/fs"
 	"ltk/gamehash"
+	"ltk/helper"
 	"ltk/io/wadfile"
-	"ltk/logger"
 	"os"
 	"strings"
+)
+
+const (
+	// mapping the data/skin_0****.bin file
+	packerMapping = "OBSIDIAN_PACKED_MAPPING.txt"
 )
 
 type WadExtract struct {
@@ -55,37 +61,49 @@ func (w *WadExtract) ExtractAll(location string) error {
 			return err
 		}
 		name := w.hash.HashTable[hash]
+		// fill the file name
+		wadEntry.FileRedirection = name
 
-		// bin file tree handle
-		conditionBin :=
-			strings.HasPrefix(name, "data/") && strings.HasSuffix(name, ".bin")
-		if conditionBin {
-			binName := fmt.Sprintf("%x", hash)
-			if len(binName) == 15 {
-				binName = "0" + binName
+		folders := strings.Split(name, "/")
+		// data/...****.bin
+		if len(folders) == 2 && strings.HasSuffix(name, ".bin") {
+
+			conditionBin := strings.HasPrefix(name, "data/") && strings.HasSuffix(name, ".bin")
+			if conditionBin {
+				mapping := location + "/" + packerMapping
+				var file *os.File
+				if isExist(mapping) {
+					file, err = os.OpenFile(mapping, os.O_APPEND, fs.ModePerm)
+					if err != nil {
+						return err
+					}
+				} else {
+					file, err = os.Create(mapping)
+					if err != nil {
+						return err
+					}
+				}
+				indexName := helper.HashToHex16(hash) + ".bin"
+				content := indexName + " = " + name + "\r\n"
+				_, err := io.WriteString(file, content)
+				if err != nil {
+					return err
+				}
+				name = indexName
 			}
-			name = strings.ToUpper(binName) + ".bin"
 		}
 
-		if len(name) == 0 {
-			return errors.New("hash table entry not found")
-		}
-
-		index := strings.LastIndex(name, "/")
-		pathAll := strings.SplitN(name, "/", index)
-		parentAll := pathAll[:len(pathAll)-1]
-		join := strings.Join(parentAll, "/")
-		dir := location + "/" + join
+		folder := strings.Join(folders[:len(folders)-1], "/")
+		dir := location + "/" + folder
 		err = CreateMutiDir(dir)
+
 		if err != nil {
-			logger.Error("create dir error:", err)
 			return err
 		}
 		write := location + "/" + name
-		err2 := os.WriteFile(write, asserts, os.ModePerm)
-		if err2 != nil {
-			logger.Error("write file error:", err2)
-			return err2
+		err = os.WriteFile(write, asserts, os.ModePerm)
+		if err != nil {
+			return err
 		}
 	}
 

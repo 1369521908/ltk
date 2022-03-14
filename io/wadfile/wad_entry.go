@@ -7,27 +7,29 @@ import (
 )
 
 type WadEntry struct {
-	TOC_SIZE_V3      int // default 32
-	XXHash           uint64
-	CompressedSize   uint32
-	UncompressedSize uint32
-	Type             WadEntryType
-	ChecksumType     WadEntryChecksumType
-	Checksum         []byte
-	FileRedirection  string
-	_dataOffset      uint32
-	_isDuplicated    bool
-	wad              *Wad // parent
+	TOC_SIZE_V3         int // default 32
+	XXHash              uint64
+	CompressedSize      uint32
+	UncompressedSize    uint32
+	Type                WadEntryType
+	_subChunkCount      uint32
+	ChecksumType        WadEntryChecksumType
+	Checksum            []byte
+	FileRedirection     string
+	_dataOffset         uint32
+	_isDuplicated       bool
+	_firstSubChunkIndex uint16
+	wad                 *Wad // parent
 }
 
 type WadEntryType byte
 
 const (
-	Uncompressed    WadEntryType = 0
-	GZip            WadEntryType = 1
-	FileRedirection WadEntryType = 2
-	ZStandard       WadEntryType = 3
-	// ZStandardWithsubchunks WadEntryType = 4
+	Uncompressed        WadEntryType = 0
+	GZip                WadEntryType = 1
+	FileRedirection     WadEntryType = 2
+	ZStandard           WadEntryType = 3
+	ZStandardWithChunks WadEntryType = 4
 )
 
 type WadEntryChecksumType byte
@@ -70,21 +72,24 @@ func NewWadEntry(wad *Wad, file *os.File, major byte, minor byte) *WadEntry {
 	if _, err := file.Read(type_); err != nil {
 		return nil
 	}
-	w.Type = WadEntryType(uint8(type_[0]))
-
+	entryType := WadEntryType(uint8(type_[0]))
+	// ???
+	w._subChunkCount = uint32(w.Type >> 4)
+	// ???
+	w.Type = entryType & 0xF
 	_isDuplicated_ := make([]byte, 1)
 	if _, err := file.Read(_isDuplicated_); err != nil {
 		return nil
 	}
 	w._isDuplicated = uint8(_isDuplicated_[0]) > 0
 
-	// pad
-	pad_ := make([]byte, 2)
-	if _, err := file.Read(pad_); err != nil {
+	firstSubChunkIndex_ := make([]byte, 2)
+	if _, err := file.Read(firstSubChunkIndex_); err != nil {
 		return nil
 	}
+	w._firstSubChunkIndex = binary.LittleEndian.Uint16(firstSubChunkIndex_)
 
-	if major > 2 {
+	if major >= 2 {
 		checksum_ := make([]byte, 8)
 		if _, err := file.Read(checksum_); err != nil {
 			return nil

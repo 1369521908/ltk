@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-var wadpath = "../../files/wad/Aatrox.wad.client"
+var wadpath = "../../files/wad/Aphelios.wad.client"
 var gamehashpath = "../../files/hash/hashes.game.txt"
 
 func TestNewExtract(t *testing.T) {
@@ -27,7 +27,7 @@ func TestWadExtract_ExtractAll(t *testing.T) {
 
 	wadExtract := NewExtract(wad, hash)
 
-	err = wadExtract.ExtractAll("E:/test/Aatrox")
+	err = wadExtract.ExtractAll("E:/test/Aphelios")
 	if err != nil {
 		t.Error(err)
 	}
