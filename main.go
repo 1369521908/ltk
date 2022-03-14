@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"ltk/io/wadFile"
+	"ltk/io/wadfile"
 	"ltk/logger"
 	"net/http"
 	_ "net/http/pprof"
@@ -20,10 +20,10 @@ func main() {
 	}()
 
 	paths := []string{
-		"files/wadFile/Aatrox.wadFile.client",
-		"files/wadFile/Aphelios.wadFile.client",
-		"files/wadFile/Yone.wadFile.client"}
-	wad, err := wadFile.Read(paths[0])
+		"files/wad/Aatrox.wad.client",
+		"files/wad/Aphelios.wad.client",
+		"files/wad/Yone.wad.client"}
+	wad, err := wadfile.Read(paths[0])
 	if err != nil {
 		return
 	}

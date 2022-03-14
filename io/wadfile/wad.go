@@ -1,4 +1,4 @@
-package wadFile
+package wadfile
 
 import (
 	"encoding/binary"
@@ -127,7 +127,7 @@ func Read(wadPath string) (*Wad, error) {
 	for i := uint32(0); i < fileCount; i++ {
 		entry := NewWadEntry(wad, file, major, minor)
 		if _, exist := wad.Entries[entry.XXHash]; exist {
-			return nil, errors.New("Tried to read a Wad Entry with the same path gameHash as an already existing entry: " +
+			return nil, errors.New("Tried to read a Wad Entry with the same path gamehash as an already existing entry: " +
 				fmt.Sprintf("%x", entry.XXHash))
 		}
 		wad.Entries[entry.XXHash] = entry

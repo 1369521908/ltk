@@ -1,4 +1,4 @@
-package wadFile
+package wadfile
 
 type WadEntryBuilder struct {
 	EntryType            WadEntryType

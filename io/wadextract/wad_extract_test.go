@@ -1,26 +1,26 @@
-package wadExtract
+package wadextract
 
 import (
-	"ltk/gameHash"
-	"ltk/io/wadFile"
+	"ltk/gamehash"
+	"ltk/io/wadfile"
 	"testing"
 )
 
 var wadpath = "../../files/wad/Aatrox.wad.client"
-var gamehashpath = "../../files/hash/GAME_HASHTABLE.txt"
+var gamehashpath = "../../files/hash/hashes.game.txt"
 
 func TestNewExtract(t *testing.T) {
 
 }
 
 func TestWadExtract_ExtractAll(t *testing.T) {
-	wad, err := wadFile.Read(wadpath)
+	wad, err := wadfile.Read(wadpath)
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	hash := gameHash.NewGameHash(gamehashpath)
+	hash := gamehash.NewGameHash(gamehashpath)
 	if err != nil {
 		t.Error(err)
 	}

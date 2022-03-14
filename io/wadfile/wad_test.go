@@ -1,4 +1,4 @@
-package wadFile
+package wadfile
 
 import (
 	"encoding/hex"
@@ -82,7 +82,7 @@ func Test_ByteArrayToHex(t *testing.T) {
 }
 
 func TestRead(t *testing.T) {
-	filepath := "../../files/wadFile/Aatrox.wadFile.client"
+	filepath := "../../files/wadfile/Aatrox.wadfile.client"
 
 	start := time.Now().Unix()
 	wad, err := Read(filepath)

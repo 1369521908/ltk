@@ -1,4 +1,4 @@
-package gameHash
+package gamehash
 
 import (
 	"bufio"

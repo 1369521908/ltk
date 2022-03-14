@@ -1,4 +1,4 @@
-package wadFile
+package wadfile
 
 type WadHandle struct {
 	wad *Wad

@@ -1,21 +1,21 @@
-package wadExtract
+package wadextract
 
 import (
 	"errors"
 	"fmt"
-	"ltk/gameHash"
-	"ltk/io/wadFile"
+	"ltk/gamehash"
+	"ltk/io/wadfile"
 	"ltk/logger"
 	"os"
 	"strings"
 )
 
 type WadExtract struct {
-	wad  *wadFile.Wad
-	hash *gameHash.GameHash
+	wad  *wadfile.Wad
+	hash *gamehash.GameHash
 }
 
-func NewExtract(wad *wadFile.Wad, hash *gameHash.GameHash) *WadExtract {
+func NewExtract(wad *wadfile.Wad, hash *gamehash.GameHash) *WadExtract {
 	return &WadExtract{
 		wad:  wad,
 		hash: hash,
@@ -47,20 +47,31 @@ func isExist(path string) bool {
 	return true
 
 }
+
 func (w *WadExtract) ExtractAll(location string) error {
-	for xxhash, wadEntry := range w.wad.Entries {
-		asserts, err := wadFile.NewWadEntryDataHandle(wadEntry).GetDecompressedBytes()
+	for hash, wadEntry := range w.wad.Entries {
+		asserts, err := wadfile.NewWadEntryDataHandle(wadEntry).GetDecompressedBytes()
 		if err != nil {
 			return err
 		}
-		name := w.hash.HashTable[xxhash]
+		name := w.hash.HashTable[hash]
+
+		// bin file tree handle
+		conditionBin :=
+			strings.HasPrefix(name, "data/") && strings.HasSuffix(name, ".bin")
+		if conditionBin {
+			binName := fmt.Sprintf("%x", hash)
+			if len(binName) == 15 {
+				binName = "0" + binName
+			}
+			name = strings.ToUpper(binName) + ".bin"
+		}
+
 		if len(name) == 0 {
 			return errors.New("hash table entry not found")
 		}
-		name = strings.ReplaceAll(name, "data\n/", "")
 
 		index := strings.LastIndex(name, "/")
-		logger.Info("index:", index)
 		pathAll := strings.SplitN(name, "/", index)
 		parentAll := pathAll[:len(pathAll)-1]
 		join := strings.Join(parentAll, "/")
