@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"ltk/helper/structures"
 	"ltk/logger"
+	"sort"
 )
 
 type SimpleSkin struct {
@@ -106,22 +108,28 @@ func NewSimpleSkin(data []byte, _leaveOpen bool) *SimpleSkin {
 		}
 
 		vertexType = Basic
+		var boundingBox *structures.R3DBox
+		var boundingSphere *structures.R3DSphere
 		if major == 4 {
 			vertexType_ := make([]byte, 4)
 			if _, err := br.Read(vertexType_); err != nil {
 				return nil
 			}
 			vertexType = SimpleSkinVertexType(binary.LittleEndian.Uint32(vertexType_))
+			boundingBox = structures.NewR3DBoxWithReader(br)
+			boundingSphere = structures.NewR3DSphereByReader(br)
+		} else {
+			boundingBox = new(structures.R3DBox)
+			boundingSphere = new(structures.R3DSphere)
 		}
 
 		fmt.Println(vertexType)
 		fmt.Println(vertexSize)
 		fmt.Println(vertexCount)
 		fmt.Println(indexCount)
+		fmt.Println(boundingBox)
+		fmt.Println(boundingSphere)
 
-		if major == 4 {
-			// TODO r3dbox handle
-		}
 	}
 
 	indices := make([]uint32, 0)
@@ -139,6 +147,25 @@ func NewSimpleSkin(data []byte, _leaveOpen bool) *SimpleSkin {
 
 	for i := uint32(0); i < vertexCount; i++ {
 		vertices = append(vertices, NewSimpleSkinVertex(br))
+	}
+
+	if major == 0 {
+		for _, submesh := range skn.Submeshes {
+			submeshIndices := indices[submesh._startIndex:submesh._indexCount]
+			sort.Slice(submeshIndices, func(i, j int) bool {
+				return submeshIndices[i] < submeshIndices[j]
+			})
+			minIndex := submeshIndices[0]
+
+			indices := make([]int16, 0)
+			for _, index := range submeshIndices {
+				// TODO handling
+				if index -= minIndex {
+					indices = append(indices, int16(index))
+				}
+			}
+			submesh.Indices = indices
+		}
 	}
 
 	return skn
