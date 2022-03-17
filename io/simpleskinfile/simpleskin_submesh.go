@@ -9,12 +9,24 @@ import (
 // SimpleSkinSubMesh 子网格
 type SimpleSkinSubMesh struct {
 	Name         string
-	Vertices     []SimpleSkinVertex
-	Indices      []int16
+	Vertices     []*SimpleSkinVertex
+	Indices      []uint16
 	_startVertex uint32
 	_vertexCount uint32
 	_startIndex  uint32
 	_indexCount  uint32
+}
+
+func NewSimpleSkinSubMeshByName(name string, indices []uint16, vertices []*SimpleSkinVertex) *SimpleSkinSubMesh {
+	return &SimpleSkinSubMesh{
+		Name:         name,
+		Vertices:     vertices,
+		Indices:      indices,
+		_startVertex: 0,
+		_vertexCount: uint32(len(vertices)),
+		_startIndex:  0,
+		_indexCount:  uint32(len(indices)),
+	}
 }
 
 func NewSimpleSkinSubMesh(br *bytes.Reader) *SimpleSkinSubMesh {

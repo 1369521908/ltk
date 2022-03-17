@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
-	"log"
+	"ltk/gamehash"
+	"ltk/io/wadextract"
 	"ltk/io/wadfile"
 	"ltk/logger"
 	"net/http"
@@ -16,7 +16,7 @@ func init() {
 func main() {
 
 	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
+		logger.Info(http.ListenAndServe("localhost:6060", nil))
 	}()
 
 	paths := []string{
@@ -28,10 +28,17 @@ func main() {
 		return
 	}
 
-	for k, _ := range wad.Entries {
-		xxhash := fmt.Sprintf("%x", k)
-		logger.Info(xxhash)
+	gamehashpath := "files/hash/hashes.game.txt"
+	hash := gamehash.NewGameHash(gamehashpath)
+	if err != nil {
+		logger.Error("", err)
 	}
 
+	wadExtract := wadextract.NewExtract(wad, hash)
+
+	err = wadExtract.ExtractAll("E:/test/Aatrox")
+	if err != nil {
+		logger.Error("", err)
+	}
 	select {}
 }

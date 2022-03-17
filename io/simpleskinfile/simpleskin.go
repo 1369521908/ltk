@@ -132,7 +132,7 @@ func NewSimpleSkin(data []byte, _leaveOpen bool) *SimpleSkin {
 
 	}
 
-	indices := make([]uint32, 0)
+	indices := make([]uint16, 0)
 
 	vertices := make([]*SimpleSkinVertex, 0)
 
@@ -141,15 +141,17 @@ func NewSimpleSkin(data []byte, _leaveOpen bool) *SimpleSkin {
 		if _, err := br.Read(index_); err != nil {
 			return nil
 		}
-		index := binary.LittleEndian.Uint32(index_)
+		index := binary.LittleEndian.Uint16(index_)
 		indices = append(indices, index)
 	}
 
 	for i := uint32(0); i < vertexCount; i++ {
-		vertices = append(vertices, NewSimpleSkinVertex(br))
+		vertices = append(vertices, NewSimpleSkinVertex(br, vertexType))
 	}
 
 	if major == 0 {
+		skn.Submeshes = append(skn.Submeshes, NewSimpleSkinSubMeshByName("Base", indices, vertices))
+	} else {
 		for _, submesh := range skn.Submeshes {
 			submeshIndices := indices[submesh._startIndex:submesh._indexCount]
 			sort.Slice(submeshIndices, func(i, j int) bool {
@@ -157,14 +159,11 @@ func NewSimpleSkin(data []byte, _leaveOpen bool) *SimpleSkin {
 			})
 			minIndex := submeshIndices[0]
 
-			indices := make([]int16, 0)
 			for _, index := range submeshIndices {
-				// TODO handling
-				if index -= minIndex {
-					indices = append(indices, int16(index))
-				}
+				index = index - minIndex
 			}
-			submesh.Indices = indices
+			submesh.Indices = submeshIndices
+			submesh.Vertices = vertices[submesh._startVertex:submesh._vertexCount]
 		}
 	}
 

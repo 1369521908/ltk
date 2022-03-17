@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"ltk/logger"
 	"os"
+	"time"
 )
 
 type Wad struct {
@@ -27,6 +29,8 @@ func (w *Wad) Signature() string {
 }
 
 func Read(wadPath string) (*Wad, error) {
+	start := time.Now()
+
 	file, err := os.OpenFile(wadPath, os.O_RDWR, fs.ModePerm)
 	if err != nil {
 		return nil, err
@@ -139,5 +143,6 @@ func Read(wadPath string) (*Wad, error) {
 		wad.Entries[entry.XXHash] = entry
 	}
 
+	logger.Info("Wad file read in " + time.Since(start).String())
 	return wad, nil
 }

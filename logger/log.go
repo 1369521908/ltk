@@ -7,26 +7,26 @@ func init() {
 	logs.SetLogger(logs.AdapterFile, `{"filename":"/logs/app.logger","level":7,"maxlines":0,"maxsize":0,"daily":true,"maxdays":10,"color":true}`)
 }
 
-func Trace(format string, v ...interface{}) {
-	logs.Trace(format, v...)
+func Trace(f interface{}, v ...interface{}) {
+	logs.Trace(f, v...)
 }
 
-func Debug(format string, v ...interface{}) {
-	logs.Debug(format, v...)
+func Debug(f interface{}, v ...interface{}) {
+	logs.Debug(f, v...)
 }
 
-func Info(format string, v ...interface{}) {
-	logs.Info(format, v...)
+func Info(f interface{}, v ...interface{}) {
+	logs.Info(f, v...)
 }
 
-func Warn(format string, v ...interface{}) {
-	logs.Warn(format, v...)
+func Warn(f interface{}, v ...interface{}) {
+	logs.Warn(f, v...)
 }
 
-func Error(format string, v ...interface{}) {
-	logs.Error(format, v...)
+func Error(f interface{}, v ...interface{}) {
+	logs.Error(f, v...)
 }
 
-func Critical(format string, v ...interface{}) {
-	logs.Critical(format, v...)
+func Critical(f interface{}, v ...interface{}) {
+	logs.Critical(f, v...)
 }

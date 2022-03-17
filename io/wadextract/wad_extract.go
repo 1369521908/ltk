@@ -7,8 +7,10 @@ import (
 	"ltk/gamehash"
 	"ltk/helper"
 	"ltk/io/wadfile"
+	"ltk/logger"
 	"os"
 	"strings"
+	"time"
 )
 
 const (
@@ -55,6 +57,25 @@ func isExist(path string) bool {
 }
 
 func (w *WadExtract) ExtractAll(location string) error {
+	start := time.Now()
+
+	mapping := location + "/" + packerMapping
+	var file *os.File
+	if !isExist(mapping) {
+		if err := CreateMutiDir(location); err != nil {
+			return err
+		}
+		fileNew, err := os.Create(mapping)
+		if err != nil {
+			return err
+		}
+		file = fileNew
+	}
+	file, err := os.OpenFile(mapping, os.O_APPEND, fs.ModePerm)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
 	for hash, wadEntry := range w.wad.Entries {
 		asserts, err := wadfile.NewWadEntryDataHandle(wadEntry).GetDecompressedBytes()
 		if err != nil {
@@ -70,19 +91,6 @@ func (w *WadExtract) ExtractAll(location string) error {
 
 			conditionBin := strings.HasPrefix(name, "data/") && strings.HasSuffix(name, ".bin")
 			if conditionBin {
-				mapping := location + "/" + packerMapping
-				var file *os.File
-				if isExist(mapping) {
-					file, err = os.OpenFile(mapping, os.O_APPEND, fs.ModePerm)
-					if err != nil {
-						return err
-					}
-				} else {
-					file, err = os.Create(mapping)
-					if err != nil {
-						return err
-					}
-				}
 				indexName := helper.HashToHex16(hash) + ".bin"
 				content := indexName + " = " + name + "\r\n"
 				_, err := io.WriteString(file, content)
@@ -107,5 +115,6 @@ func (w *WadExtract) ExtractAll(location string) error {
 		}
 	}
 
+	logger.Info("extract all wad file success, cost time: %v", time.Since(start))
 	return nil
 }
