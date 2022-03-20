@@ -3,7 +3,6 @@ package simpleskinfile
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"ltk/helper/structures"
 	"ltk/logger"
 	"sort"
@@ -123,12 +122,17 @@ func NewSimpleSkin(data []byte, _leaveOpen bool) *SimpleSkin {
 			boundingSphere = new(structures.R3DSphere)
 		}
 
-		fmt.Println(vertexType)
-		fmt.Println(vertexSize)
-		fmt.Println(vertexCount)
-		fmt.Println(indexCount)
-		fmt.Println(boundingBox)
-		fmt.Println(boundingSphere)
+		if vertexSize == 0 {
+
+		}
+
+		if boundingBox == nil {
+
+		}
+
+		if boundingSphere == nil {
+
+		}
 
 	}
 
@@ -137,7 +141,7 @@ func NewSimpleSkin(data []byte, _leaveOpen bool) *SimpleSkin {
 	vertices := make([]*SimpleSkinVertex, 0)
 
 	for i := uint32(0); i < indexCount; i++ {
-		index_ := make([]byte, 4)
+		index_ := make([]byte, 2)
 		if _, err := br.Read(index_); err != nil {
 			return nil
 		}
@@ -153,17 +157,19 @@ func NewSimpleSkin(data []byte, _leaveOpen bool) *SimpleSkin {
 		skn.Submeshes = append(skn.Submeshes, NewSimpleSkinSubMeshByName("Base", indices, vertices))
 	} else {
 		for _, submesh := range skn.Submeshes {
-			submeshIndices := indices[submesh._startIndex:submesh._indexCount]
-			sort.Slice(submeshIndices, func(i, j int) bool {
-				return submeshIndices[i] < submeshIndices[j]
+			submeshIndices := indices[submesh._startIndex : submesh._startIndex+submesh._indexCount]
+			indices := make([]uint16, len(submeshIndices))
+			copy(indices, submeshIndices)
+			sort.Slice(indices, func(i, j int) bool {
+				return indices[i] < indices[j]
 			})
-			minIndex := submeshIndices[0]
+			minIndex := indices[0]
 
+			indices = make([]uint16, 0)
 			for _, index := range submeshIndices {
-				index = index - minIndex
+				submesh.Indices = append(submesh.Indices, index-minIndex)
 			}
-			submesh.Indices = submeshIndices
-			submesh.Vertices = vertices[submesh._startVertex:submesh._vertexCount]
+			submesh.Vertices = vertices[submesh._startVertex : submesh._startVertex+submesh._vertexCount]
 		}
 	}
 

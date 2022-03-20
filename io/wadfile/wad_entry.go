@@ -1,9 +1,9 @@
 package wadfile
 
 import (
+	"bufio"
 	"encoding/binary"
-	"io"
-	"os"
+	"ltk/logger"
 )
 
 type WadEntry struct {
@@ -39,37 +39,37 @@ const (
 	XXHash3 WadEntryChecksumType = 1
 )
 
-func NewWadEntry(wad *Wad, file *os.File, major byte, minor byte) *WadEntry {
+func NewWadEntry(wad *Wad, br *bufio.Reader, major byte, minor byte) *WadEntry {
 
 	w := &WadEntry{}
 	w.wad = wad
 
 	xxHash_ := make([]byte, 8)
-	if _, err := file.Read(xxHash_); err != nil {
+	if _, err := br.Read(xxHash_); err != nil {
 		return nil
 	}
 	w.XXHash = binary.LittleEndian.Uint64(xxHash_)
 
 	_dataOffset_ := make([]byte, 4)
-	if _, err := file.Read(_dataOffset_); err != nil {
+	if _, err := br.Read(_dataOffset_); err != nil {
 		return nil
 	}
 	w._dataOffset = binary.LittleEndian.Uint32(_dataOffset_)
 
 	compressedSize_ := make([]byte, 4)
-	if _, err := file.Read(compressedSize_); err != nil {
+	if _, err := br.Read(compressedSize_); err != nil {
 		return nil
 	}
 	w.CompressedSize = binary.LittleEndian.Uint32(compressedSize_)
 
 	uncompressedSize_ := make([]byte, 4)
-	if _, err := file.Read(uncompressedSize_); err != nil {
+	if _, err := br.Read(uncompressedSize_); err != nil {
 		return nil
 	}
 	w.UncompressedSize = binary.LittleEndian.Uint32(uncompressedSize_)
 
 	type_ := make([]byte, 1)
-	if _, err := file.Read(type_); err != nil {
+	if _, err := br.Read(type_); err != nil {
 		return nil
 	}
 	entryType := WadEntryType(uint8(type_[0]))
@@ -78,20 +78,20 @@ func NewWadEntry(wad *Wad, file *os.File, major byte, minor byte) *WadEntry {
 	// ???
 	w.Type = entryType & 0xF
 	_isDuplicated_ := make([]byte, 1)
-	if _, err := file.Read(_isDuplicated_); err != nil {
+	if _, err := br.Read(_isDuplicated_); err != nil {
 		return nil
 	}
 	w._isDuplicated = uint8(_isDuplicated_[0]) > 0
 
 	firstSubChunkIndex_ := make([]byte, 2)
-	if _, err := file.Read(firstSubChunkIndex_); err != nil {
+	if _, err := br.Read(firstSubChunkIndex_); err != nil {
 		return nil
 	}
 	w._firstSubChunkIndex = binary.LittleEndian.Uint16(firstSubChunkIndex_)
 
 	if major >= 2 {
 		checksum_ := make([]byte, 8)
-		if _, err := file.Read(checksum_); err != nil {
+		if _, err := br.Read(checksum_); err != nil {
 			return nil
 		}
 		w.Checksum = checksum_
@@ -105,26 +105,7 @@ func NewWadEntry(wad *Wad, file *os.File, major byte, minor byte) *WadEntry {
 
 	if w.Type == FileRedirection {
 		// TODO need test
-		cur, err := file.Seek(0x00, io.SeekCurrent)
-		if err != nil {
-			return nil
-		}
-
-		_, err = file.Seek(int64(w._dataOffset), io.SeekStart)
-		if err != nil {
-			return nil
-		}
-
-		fileRedirection := make([]byte, 4)
-		if _, err := file.Read(fileRedirection); err != nil {
-			return nil
-		}
-		w.FileRedirection = string(fileRedirection)
-
-		_, err = file.Seek(cur, io.SeekStart)
-		if err != nil {
-			return nil
-		}
+		logger.Error("don`t support this file type yet")
 	}
 
 	return w

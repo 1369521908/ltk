@@ -25,6 +25,7 @@ func main() {
 		"files/wad/Yone.wad.client"}
 	wad, err := wadfile.Read(paths[0])
 	if err != nil {
+		logger.Error(err)
 		return
 	}
 

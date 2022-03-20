@@ -1,10 +1,12 @@
 package wadfile
 
 import (
+	"bufio"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"ltk/logger"
 	"os"
@@ -16,6 +18,7 @@ type Wad struct {
 	signature      []byte
 	Entries        map[uint64]*WadEntry
 	File           *os.File
+	br             *io.Reader
 	_leaveOpen     bool // not used
 	_isDisposed    bool
 	dataChecksum   uint64
@@ -35,6 +38,7 @@ func Read(wadPath string) (*Wad, error) {
 	if err != nil {
 		return nil, err
 	}
+	br := bufio.NewReader(file)
 
 	wad := &Wad{
 		HEADER_SIZE_V3: 272, // fixed 272
@@ -43,7 +47,7 @@ func Read(wadPath string) (*Wad, error) {
 	}
 
 	magic := make([]byte, 2) // RW
-	if _, err := file.Read(magic); err != nil {
+	if _, err := br.Read(magic); err != nil {
 		return nil, err
 	}
 	if string(magic) != "RW" {
@@ -51,13 +55,13 @@ func Read(wadPath string) (*Wad, error) {
 	}
 
 	major_ := make([]byte, 1) // 3
-	if _, err := file.Read(major_); err != nil {
+	if _, err := br.Read(major_); err != nil {
 		return nil, err
 	}
 	major := uint8(major_[0])
 
 	minor_ := make([]byte, 1) // 1
-	if _, err := file.Read(minor_); err != nil {
+	if _, err := br.Read(minor_); err != nil {
 		return nil, err
 	}
 	minor := uint8(minor_[0])
@@ -73,24 +77,24 @@ func Read(wadPath string) (*Wad, error) {
 
 	if major == 2 {
 		ecdsaLength_ := make([]byte, 1)
-		if _, err := file.Read(ecdsaLength_); err != nil {
+		if _, err := br.Read(ecdsaLength_); err != nil {
 			return nil, err
 		}
 		ecdsaLength := ecdsaLength_[0]
 
 		signature_ := make([]byte, ecdsaLength)
-		if _, err := file.Read(signature_); err != nil {
+		if _, err := br.Read(signature_); err != nil {
 			return nil, err
 		}
 		signature = signature_
 		// unknown fixed 83 - ecdsaLength
 		unknow := make([]byte, 83-ecdsaLength)
-		if _, err := file.Read(unknow); err != nil {
+		if _, err := br.Read(unknow); err != nil {
 			return nil, err
 		}
 
 		dataChecksum_ := make([]byte, 8)
-		if _, err := file.Read(dataChecksum_); err != nil {
+		if _, err := br.Read(dataChecksum_); err != nil {
 			return nil, err
 		}
 		dataChecksum = dataChecksum_
@@ -98,12 +102,12 @@ func Read(wadPath string) (*Wad, error) {
 
 	if major == 3 {
 		signature_ := make([]byte, 256)
-		if _, err := file.Read(signature_); err != nil {
+		if _, err := br.Read(signature_); err != nil {
 			return nil, err
 		}
 
 		dataChecksum_ := make([]byte, 8)
-		if _, err := file.Read(dataChecksum_); err != nil {
+		if _, err := br.Read(dataChecksum_); err != nil {
 			return nil, err
 		}
 		dataChecksum = dataChecksum_
@@ -116,26 +120,26 @@ func Read(wadPath string) (*Wad, error) {
 
 	if major == 1 || major == 2 {
 		tocStartOffset := make([]byte, 2)
-		if _, err := file.Read(tocStartOffset); err != nil {
+		if _, err := br.Read(tocStartOffset); err != nil {
 			return nil, err
 		}
 
 		tocFileEntrySize := make([]byte, 2)
-		if _, err := file.Read(tocFileEntrySize); err != nil {
+		if _, err := br.Read(tocFileEntrySize); err != nil {
 			return nil, err
 		}
 	}
 
 	// WadEntry count
 	fileCount_ := make([]byte, 4)
-	if _, err := file.Read(fileCount_); err != nil {
+	if _, err := br.Read(fileCount_); err != nil {
 		return nil, err
 	}
 	fileCount := binary.LittleEndian.Uint32(fileCount_)
 	wad.FileCount = fileCount
 
 	for i := uint32(0); i < fileCount; i++ {
-		entry := NewWadEntry(wad, file, major, minor)
+		entry := NewWadEntry(wad, br, major, minor)
 		if _, exist := wad.Entries[entry.XXHash]; exist {
 			return nil, errors.New("Tried to read a Wad Entry with the same path gamehash as an already existing entry: " +
 				fmt.Sprintf("%x", entry.XXHash))
