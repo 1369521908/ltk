@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"ltk/helper"
-	"os"
 	"testing"
 	"time"
 )
@@ -84,13 +83,6 @@ func Test_ByteArrayToHex(t *testing.T) {
 
 func TestRead(t *testing.T) {
 	filepath := "../../files/wad/Aatrox.wad.client"
-	signpath := "../../files/sign.txt"
-
-	sign, err := os.ReadFile(signpath)
-	if err != nil {
-		t.Error(err)
-	}
-	t.Log(string(sign))
 
 	start := time.Now().Unix()
 	wad, err := Read(filepath)

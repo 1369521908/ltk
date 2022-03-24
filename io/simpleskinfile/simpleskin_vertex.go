@@ -2,6 +2,7 @@ package simpleskinfile
 
 import (
 	"bytes"
+	"ltk/helper"
 	"ltk/helper/structures"
 	"unsafe"
 )
@@ -63,14 +64,8 @@ func NewSimpleSkinVertex(br *bytes.Reader, vertexType SimpleSkinVertexType) *Sim
 	v.UV.Y = *(*float32)(unsafe.Pointer(&uv[4]))
 
 	if vertexType == Color {
-		color := make([]byte, 4*4)
-		if _, err := br.Read(color); err != nil {
-			return nil
-		}
-		v.Color.R = *(*float32)(unsafe.Pointer(&color[0]))
-		v.Color.G = *(*float32)(unsafe.Pointer(&color[4]))
-		v.Color.B = *(*float32)(unsafe.Pointer(&color[8]))
-		v.Color.A = *(*float32)(unsafe.Pointer(&color[12]))
+		color := helper.ReadColor(br, structures.RgbaU8)
+		v.Color = color
 	}
 
 	return v

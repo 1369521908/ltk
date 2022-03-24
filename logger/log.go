@@ -4,7 +4,7 @@ import "github.com/beego/beego/v2/core/logs"
 
 func init() {
 	logs.SetLogger("console")
-	logs.SetLogger(logs.AdapterFile, `{"filename":"/logs/app.logger","level":7,"maxlines":0,"maxsize":0,"daily":true,"maxdays":10,"color":true}`)
+	logs.SetLogger(logs.AdapterFile, `{"filename":"/logs/app.log","level":7,"maxlines":0,"maxsize":0,"daily":true,"maxdays":10,"color":true}`)
 }
 
 func Trace(f interface{}, v ...interface{}) {
